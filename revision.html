@@ -1,0 +1,929 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Digital Tech & Society — Revision</title>
+<style>
+  :root {
+    --bg: #f7f5f0;
+    --card-bg: #ffffff;
+    --accent: #2d5986;
+    --accent-light: #e8f0f9;
+    --text: #1a1a1a;
+    --text-muted: #555;
+    --border: #ddd;
+    --correct: #2e7d32;
+    --incorrect: #c62828;
+    --correct-bg: #e8f5e9;
+    --incorrect-bg: #ffebee;
+    --shadow: 0 2px 12px rgba(0,0,0,0.08);
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'Georgia', serif;
+    background: var(--bg);
+    color: var(--text);
+    min-height: 100vh;
+  }
+
+  header {
+    background: var(--accent);
+    color: white;
+    padding: 24px 32px;
+    text-align: center;
+  }
+  header h1 { font-size: 1.6rem; font-weight: normal; letter-spacing: 0.02em; }
+  header p { font-size: 0.85rem; opacity: 0.75; margin-top: 4px; font-family: sans-serif; }
+
+  nav {
+    display: flex;
+    justify-content: center;
+    background: #fff;
+    border-bottom: 2px solid var(--border);
+    flex-wrap: wrap;
+  }
+  nav button {
+    padding: 14px 28px;
+    border: none;
+    background: none;
+    font-size: 0.9rem;
+    font-family: sans-serif;
+    cursor: pointer;
+    color: var(--text-muted);
+    border-bottom: 3px solid transparent;
+    transition: all 0.2s;
+  }
+  nav button.active { color: var(--accent); border-bottom-color: var(--accent); font-weight: bold; }
+  nav button:hover:not(.active) { background: var(--accent-light); }
+
+  .section { display: none; padding: 32px 24px; max-width: 820px; margin: 0 auto; }
+  .section.active { display: block; }
+
+  .section-intro {
+    font-family: sans-serif;
+    font-size: 0.82rem;
+    color: var(--text-muted);
+    margin-bottom: 20px;
+    line-height: 1.5;
+  }
+  .kbd {
+    display: inline-block;
+    background: #e8e8e8;
+    border: 1px solid #bbb;
+    border-radius: 4px;
+    padding: 1px 6px;
+    font-family: monospace;
+    font-size: 0.78rem;
+    color: #333;
+  }
+
+  /* ── FLASHCARD ── */
+  .deck-controls {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+  .deck-controls span { font-family: sans-serif; font-size: 0.85rem; color: var(--text-muted); }
+
+  .btn {
+    padding: 8px 18px;
+    border: 1.5px solid var(--accent);
+    background: white;
+    color: var(--accent);
+    border-radius: 6px;
+    cursor: pointer;
+    font-family: sans-serif;
+    font-size: 0.85rem;
+    transition: all 0.15s;
+  }
+  .btn:hover { background: var(--accent); color: white; }
+  .btn-group { display: flex; gap: 8px; }
+
+  .flashcard-wrapper {
+    perspective: 1000px;
+    width: 100%;
+    height: 250px;
+    cursor: pointer;
+    margin-bottom: 20px;
+    outline: none;
+  }
+  .flashcard {
+    width: 100%;
+    height: 100%;
+    position: relative;
+    transform-style: preserve-3d;
+    transition: transform 0.45s ease;
+    border-radius: 12px;
+  }
+  .flashcard.flipped { transform: rotateY(180deg); }
+  .card-face {
+    position: absolute;
+    width: 100%;
+    height: 100%;
+    backface-visibility: hidden;
+    border-radius: 12px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 32px;
+    text-align: center;
+    box-shadow: var(--shadow);
+  }
+  .card-front { background: var(--card-bg); border: 2px solid var(--border); }
+  .card-front .label {
+    font-family: sans-serif;
+    font-size: 0.68rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--accent);
+    margin-bottom: 14px;
+  }
+  .card-front .term { font-size: 1.3rem; font-weight: bold; line-height: 1.35; }
+  .card-front .hint { font-family: sans-serif; font-size: 0.72rem; color: var(--text-muted); margin-top: 18px; }
+  .card-back { background: var(--accent); color: white; transform: rotateY(180deg); }
+  .card-back .answer-label {
+    font-family: sans-serif;
+    font-size: 0.68rem;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    opacity: 0.7;
+    margin-bottom: 12px;
+  }
+  .card-back .answer { font-size: 1.1rem; line-height: 1.55; }
+  .card-back .year { font-family: sans-serif; font-size: 0.78rem; opacity: 0.75; margin-top: 10px; }
+
+  .lecture-tag {
+    font-family: sans-serif;
+    font-size: 0.68rem;
+    background: var(--accent-light);
+    color: var(--accent);
+    padding: 3px 10px;
+    border-radius: 20px;
+    margin-bottom: 14px;
+  }
+  .card-back .lecture-tag-back {
+    font-family: sans-serif;
+    font-size: 0.68rem;
+    background: rgba(255,255,255,0.18);
+    color: rgba(255,255,255,0.85);
+    padding: 3px 10px;
+    border-radius: 20px;
+    margin-bottom: 14px;
+  }
+
+  /* ── MCQ ── */
+  .mcq-top {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    margin-bottom: 20px;
+    flex-wrap: wrap;
+    gap: 10px;
+  }
+  .mcq-counter { font-family: sans-serif; font-size: 0.85rem; color: var(--text-muted); }
+  .score-display { font-family: sans-serif; font-size: 0.9rem; color: var(--accent); font-weight: bold; }
+
+  .mcq-card {
+    background: var(--card-bg);
+    border: 1.5px solid var(--border);
+    border-radius: 12px;
+    padding: 28px 28px 24px;
+    box-shadow: var(--shadow);
+    min-height: 200px;
+  }
+  .mcq-card .q-lecture-tag {
+    font-family: sans-serif;
+    font-size: 0.68rem;
+    background: var(--accent-light);
+    color: var(--accent);
+    padding: 2px 10px;
+    border-radius: 20px;
+    display: inline-block;
+    margin-bottom: 14px;
+  }
+  .mcq-card .question { font-size: 1rem; line-height: 1.65; margin-bottom: 20px; }
+  .options { display: flex; flex-direction: column; gap: 10px; }
+  .option {
+    padding: 11px 16px;
+    border: 1.5px solid var(--border);
+    border-radius: 8px;
+    cursor: pointer;
+    font-family: sans-serif;
+    font-size: 0.88rem;
+    line-height: 1.4;
+    transition: all 0.14s;
+    background: white;
+    text-align: left;
+  }
+  .option:hover:not(.disabled) { border-color: var(--accent); background: var(--accent-light); }
+  .option.correct { border-color: var(--correct); background: var(--correct-bg); color: var(--correct); font-weight: bold; pointer-events: none; }
+  .option.incorrect { border-color: var(--incorrect); background: var(--incorrect-bg); color: var(--incorrect); pointer-events: none; }
+  .option.disabled { cursor: default; pointer-events: none; }
+  .option.reveal-correct { border-color: var(--correct); background: var(--correct-bg); color: var(--correct); }
+
+  .explanation {
+    display: none;
+    margin-top: 16px;
+    padding: 12px 16px;
+    background: #f0f4f8;
+    border-left: 3px solid var(--accent);
+    border-radius: 4px;
+    font-family: sans-serif;
+    font-size: 0.84rem;
+    line-height: 1.55;
+    color: var(--text-muted);
+  }
+  .explanation.visible { display: block; }
+
+  .mcq-nav {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    margin-top: 22px;
+  }
+  .btn-primary {
+    padding: 9px 26px;
+    background: var(--accent);
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-family: sans-serif;
+    font-size: 0.9rem;
+    transition: opacity 0.15s;
+  }
+  .btn-primary:hover { opacity: 0.85; }
+
+  @media (max-width: 600px) {
+    nav button { padding: 12px 14px; font-size: 0.8rem; }
+    .card-front .term { font-size: 1.05rem; }
+    .card-back .answer { font-size: 0.95rem; }
+    .flashcard-wrapper { height: 220px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Digital Technology &amp; Society — Revision</h1>
+  <p>Lectures 1–12 · Flashcards &amp; Multiple Choice Questions</p>
+</header>
+
+<nav>
+  <button class="active" onclick="showSection('author-cards', this)">Concept → Author</button>
+  <button onclick="showSection('definition-cards', this)">Concept → Definition</button>
+  <button onclick="showSection('mcq', this)">Multiple Choice</button>
+</nav>
+
+<!-- SECTION 1: CONCEPT → AUTHOR -->
+<div id="author-cards" class="section active">
+  <p class="section-intro">
+    <span class="kbd">Space</span> flip card &nbsp;·&nbsp;
+    <span class="kbd">←</span> <span class="kbd">→</span> navigate &nbsp;·&nbsp; or use the buttons below
+  </p>
+  <div class="deck-controls">
+    <span id="author-counter">Card 1 of 28</span>
+    <div class="btn-group">
+      <button class="btn" onclick="prevCard('author')">← Prev</button>
+      <button class="btn" onclick="nextCard('author')">Next →</button>
+      <button class="btn" onclick="shuffleDeck('author')">Shuffle</button>
+    </div>
+  </div>
+  <div class="flashcard-wrapper" onclick="flipCard('author')" tabindex="0">
+    <div class="flashcard" id="author-card">
+      <div class="card-face card-front">
+        <div class="label">Concept / Study</div>
+        <div class="lecture-tag" id="author-lecture-tag">Lecture 1</div>
+        <div class="term" id="author-term">TCP/IP Protocol</div>
+        <div class="hint">Click or press Space to reveal the author(s)</div>
+      </div>
+      <div class="card-face card-back">
+        <div class="answer-label">Author(s) / Source</div>
+        <div class="lecture-tag-back" id="author-lecture-tag-back">Lecture 1</div>
+        <div class="answer" id="author-answer">Vint Cerf &amp; Bob Kahn</div>
+        <div class="year" id="author-year">1974</div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SECTION 2: CONCEPT → DEFINITION -->
+<div id="definition-cards" class="section">
+  <p class="section-intro">
+    <span class="kbd">Space</span> flip card &nbsp;·&nbsp;
+    <span class="kbd">←</span> <span class="kbd">→</span> navigate &nbsp;·&nbsp; or use the buttons below
+  </p>
+  <div class="deck-controls">
+    <span id="def-counter">Card 1 of 40</span>
+    <div class="btn-group">
+      <button class="btn" onclick="prevCard('def')">← Prev</button>
+      <button class="btn" onclick="nextCard('def')">Next →</button>
+      <button class="btn" onclick="shuffleDeck('def')">Shuffle</button>
+    </div>
+  </div>
+  <div class="flashcard-wrapper" onclick="flipCard('def')" tabindex="0">
+    <div class="flashcard" id="def-card">
+      <div class="card-face card-front">
+        <div class="label">Key Concept</div>
+        <div class="lecture-tag" id="def-lecture-tag">Lecture 1</div>
+        <div class="term" id="def-term">ARPANET</div>
+        <div class="hint">Click or press Space to reveal the definition</div>
+      </div>
+      <div class="card-face card-back">
+        <div class="answer-label">Definition</div>
+        <div class="lecture-tag-back" id="def-lecture-tag-back">Lecture 1</div>
+        <div class="answer" id="def-answer">Early US military-funded network designed to survive nuclear attack — precursor to the internet, shaped by Cold War geopolitics.</div>
+        <div class="year" id="def-year"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- SECTION 3: MCQ -->
+<div id="mcq" class="section">
+  <div class="mcq-top">
+    <span class="mcq-counter" id="mcq-counter">Question 1 of 48</span>
+    <span class="score-display" id="score-display">Score: 0 / 0</span>
+  </div>
+  <div id="mcq-card-container"></div>
+  <div class="mcq-nav">
+    <button class="btn" onclick="prevMCQ()">← Prev</button>
+    <button class="btn" onclick="nextMCQ()">Next →</button>
+    <button class="btn-primary" onclick="resetMCQ()">Restart</button>
+  </div>
+</div>
+
+<script>
+// ============================================================
+// DATA — AUTHOR CARDS
+// ============================================================
+const authorCards = [
+  { term: "TCP/IP Protocol", lecture: "Lecture 1", answer: "Vint Cerf &amp; Bob Kahn", year: "1974" },
+  { term: '"Information wants to be free" — the hippie paradox', lecture: "Lecture 1", answer: "Stewart Brand", year: "1984" },
+  { term: "Dartmouth Conference — birth of AI as an academic field", lecture: "Lecture 1", answer: "John McCarthy et al.", year: "1956" },
+  { term: "PIAI Framework (Perceive, Interpret, Act, Impact)", lecture: "Lecture 2", answer: "Dabrowska et al.", year: "" },
+  { term: "Strategic identity signalling (2020 US election study)", lecture: "Lecture 3", answer: "Van der Does et al.", year: "2022" },
+  { term: "LLM chatbots as political influence actors", lecture: "Lecture 4", answer: "Meier", year: "2024" },
+  { term: "Attention scarcity as consequence of information abundance", lecture: "Lecture 5", answer: "Herbert Simon", year: "" },
+  { term: "Attention as a productive factor (land, labor, capital)", lecture: "Lecture 5", answer: "Loewenstein &amp; Wojtowicz", year: "2025" },
+  { term: '"Twisted accountability" in algorithmic management', lecture: "Lecture 6", answer: "Stark &amp; Vanden Broeck", year: "2024" },
+  { term: "Pro-rata vs user-centric royalty models on Spotify", lecture: "Lecture 6", answer: "Meyn et al.", year: "2023" },
+  { term: "Four forms of media bias: selection, emphasis, slant, deception", lecture: "Lecture 7", answer: "Watts et al.", year: "2021" },
+  { term: "Cognitive and socio-affective drivers of false belief", lecture: "Lecture 7", answer: "Ecker et al.", year: "2022" },
+  { term: "Empirical study of echo chambers across Facebook, Twitter, Reddit, Gab", lecture: "Lecture 8", answer: "Cinelli et al.", year: "2021" },
+  { term: "Disinformation as controversy engine (two-phase model)", lecture: "Lecture 8", answer: "Diaz Ruiz &amp; Nilsson", year: "2023" },
+  { term: "Co-creation and ethical perceptions of platform users", lecture: "Lecture 9", answer: "Nadeem et al.", year: "2021" },
+  { term: "Participatory culture — users as active creators and political actors", lecture: "Lecture 10", answer: "Henry Jenkins", year: "" },
+  { term: "Artivism: hacking Google Patents to expose manipulative technology", lecture: "Lecture 10", answer: "Paolo Cirio", year: "" },
+  { term: "Surveillance begins with manufactured fear", lecture: "Lecture 11", answer: "Corey Robin", year: "" },
+  { term: "Algorithmic auditing framework (4-stage cycle)", lecture: "Lecture 11", answer: "Koshiyama et al.", year: "2024" },
+  { term: "Five platform lobbying strategies against EU regulation", lecture: "Lecture 12", answer: "Gorwa et al.", year: "2024" },
+  { term: "COMPAS — racially biased recidivism prediction algorithm", lecture: "Lecture 11", answer: "ProPublica / widely cited algorithmic auditing case", year: "" },
+  { term: "Cambridge Analytica — OCEAN model voter micro-targeting", lecture: "Lecture 11", answer: "Cambridge Analytica / Christopher Wylie (whistleblower)", year: "2018" },
+  { term: "Palantir — AI surveillance sold to military and governments", lecture: "Lecture 11", answer: "Peter Thiel / Palantir Technologies", year: "" },
+  { term: "Structural imbalance in digital consent (T&amp;Cs)", lecture: "Lecture 12", answer: "EU Commission study", year: "" },
+  { term: "GameStop / meme stocks — collective attention moves markets", lecture: "Lecture 5", answer: "Loewenstein &amp; Wojtowicz / attention economy research", year: "2025" },
+  { term: "Sharing economy contradictions — AirBnb as case study", lecture: "Lecture 2", answer: "PIAI framework applied (Dabrowska et al.)", year: "" },
+  { term: "Isegoria — equal right to speak ≠ capacity to be heard", lecture: "Lecture 4", answer: "Classical democratic theory (referenced in influencer lecture)", year: "" },
+  { term: "Blue checkmark changed from verification to paid subscription", lecture: "Lecture 7", answer: "Elon Musk / Twitter/X acquisition", year: "2022" },
+];
+
+// ============================================================
+// DATA — DEFINITION CARDS
+// ============================================================
+const defCards = [
+  { term: "Affordances", lecture: "Lecture 2", answer: "Possibilities a technology offers rather than commands — shaped by design and by how users appropriate it. Instagram affords photo-sharing but also self-comparison and brand advertising." },
+  { term: "Inscription", lecture: "Lectures 1–2", answer: "Values, politics, and assumptions embedded in technological design — e.g. TCP/IP's openness, or 'sharing economy' language that obscures profit extraction." },
+  { term: "PIAI Framework", lecture: "Lecture 2", answer: "Different actors Perceive, Interpret, and Act on the same technology differently, producing Impacts that are uneven and often unintended." },
+  { term: "Prosumer", lecture: "Lecture 2", answer: "A user who simultaneously produces and consumes content on platforms — creates value the platform captures through advertising, while the user works for free or near-free." },
+  { term: "Hippie Paradox", lecture: "Lecture 1", answer: "Stewart Brand's tension: 'information wants to be free' (open access) vs 'information wants to be expensive' (property, paywalls). Both impulses are inscribed in the internet simultaneously." },
+  { term: "Epistemic Primers", lecture: "Lecture 3", answer: "Identity signals — Twitter bio, profile picture, hashtags — that shape how credible a source seems before any content is evaluated. Same tweet, different credibility depending on who sent it." },
+  { term: "Strategic Identity Signalling", lecture: "Lecture 3", answer: "Adapting how you signal in-group identity based on who is watching — using coded language in-group members recognise but outsiders won't flag as threatening." },
+  { term: "Preferential Attachment", lecture: "Lecture 4", answer: "Algorithmic 'rich get richer': accounts with more followers appear more → gain more followers → gain authority → gain advertising deals and political reach." },
+  { term: "Liar's Dividend", lecture: "Lecture 4", answer: "When synthetic content proliferates, even real evidence gets dismissed as potentially fake — eroding the shared epistemic ground that democratic argument depends on." },
+  { term: "Attention Scarcity", lecture: "Lecture 5", answer: "In a world of information abundance, attention (not information) becomes the scarce resource — whoever controls attention controls what people think, feel, and do." },
+  { term: "Attention Economy", lecture: "Lecture 5", answer: "System in which attention is a measurable commodity (clicks, scroll depth, dwell time) sold to advertisers. You are the product being sold, not the customer." },
+  { term: "Illusory Truth Effect", lecture: "Lecture 7", answer: "Repeated exposure to a claim makes it feel familiar; familiarity is mistaken for truth — even if the claim is false. A cognitive driver of false belief (Ecker et al. 2022)." },
+  { term: "Affective Polarization", lecture: "Lecture 7", answer: "People hate and distrust the political 'other side' independent of actual policy differences — distinct from ideological polarization, and growing faster than it." },
+  { term: "Ideological Polarization", lecture: "Lecture 7", answer: "People holding increasingly different policy positions — distinct from affective polarization, which is emotional hostility regardless of policy distance." },
+  { term: "Algorithmic Management (AM)", lecture: "Lecture 6", answer: "Algorithms performing what managers used to do — assigning tasks, tracking performance, rewarding and sanctioning workers — removing human accountability from the chain." },
+  { term: "Twisted Accountability", lecture: "Lecture 6", answer: "When an algorithm makes a wrong decision, no human is responsible — the accountability chain is broken by design. Stark &amp; Vanden Broeck (2024)." },
+  { term: "Pro-Rata Royalty Model", lecture: "Lecture 6", answer: "Total streaming revenue divided by total streams — a listener's subscription fee goes to the globally most-streamed artists, not to the artists that specific listener actually plays." },
+  { term: "User-Centric Royalty Model", lecture: "Lecture 6", answer: "Each listener's subscription fee goes to the artists they actually listened to — would reallocate ~€170M/year from mainstream to niche genres on Spotify (Meyn et al. 2023)." },
+  { term: "Group Polarization", lecture: "Lecture 8", answer: "Within echo chambers, views don't just stay constant — they become more extreme, moving toward the group's existing pole. Empirically demonstrated by Cinelli et al. (2021)." },
+  { term: "Echo Chamber", lecture: "Lecture 8", answer: "Information environment where you mostly receive content from people who already agree with you — views gradually become more extreme through group polarization." },
+  { term: "Disinformation (Phase 1)", lecture: "Lecture 8", answer: "Deception + obfuscation: bad actors seed false content. Spreads not despite controversy but because of it — the platform's controversy engine does the rest." },
+  { term: "Disinformation (Phase 2)", lecture: "Lecture 8", answer: "The platform's engagement engine amplifies seeded content through existing us/them dynamics. Fact-based correction often fails because it uses an epistemology the audience doesn't trust." },
+  { term: "Isegoria", lecture: "Lecture 4", answer: "Democratic ideal of equal right to speak in public debate. The problem: equal right to speak ≠ equal capacity to be heard. Influencers exist in that gap." },
+  { term: "Slacktivism", lecture: "Lecture 10", answer: "Low-barrier digital political participation — liking, sharing, signing petitions — that is often symbolic and episodic rather than creating sustained real-world pressure." },
+  { term: "Artivism", lecture: "Lecture 10", answer: "Combination of art and activism that exposes hidden mechanisms of platforms and power — e.g. Paolo Cirio cataloguing patents for manipulative technology." },
+  { term: "OCEAN Model", lecture: "Lecture 11", answer: "Psychological profiling model: Openness, Conscientiousness, Extraversion, Agreeableness, Neuroticism — used by Cambridge Analytica to micro-target voters with tailored political advertising." },
+  { term: "COMPAS", lecture: "Lecture 11", answer: "Recidivism prediction algorithm used in US courts — flagged Black defendants as future criminals at nearly twice the rate of white defendants by crystallising historical bias in code." },
+  { term: "Algorithmic Auditing Cycle", lecture: "Lecture 11", answer: "Four continuous stages (Koshiyama et al. 2024): Development → Assessment → Mitigation → Assurance. Must be continuous because bias evolves with data and context." },
+  { term: "T&amp;Cs Structural Imbalance", lecture: "Lecture 12", answer: "Consent to platform terms is neither informed nor genuinely voluntary: users believe it takes too long, nobody else reads them, and they have no choice. All three beliefs are accurate." },
+  { term: "Buycott", lecture: "Lecture 3", answer: "Deliberately buying from a brand as a political statement — the inverse of a boycott. E.g. Democrats increasing Macy's purchase intentions after Trump's boycott call." },
+  { term: "Sharing Economy Contradiction", lecture: "Lectures 2, 9", answer: "Platforms like Airbnb use community and sharing language but operate as profit-extracting intermediaries — avoiding regulations competitors face and shifting risk onto hosts and workers." },
+  { term: "Gig Economy", lecture: "Lecture 6", answer: "Platform work broken into micro-tasks; workers classified as independent contractors. Platform sets rules, monitors, and can terminate, but labour law does not apply." },
+  { term: "Piece-Rates", lecture: "Lecture 6", answer: "Pay per task completed — makes speed the primary incentive, making quality and safety less visible. Combined with algorithmic management, removes human accountability." },
+  { term: "Selective Media Bias", lecture: "Lecture 7", answer: "Choosing what topics or events get covered at all — one of four forms of media bias (Watts et al. 2021), alongside emphasis, slant, and deception." },
+  { term: "Community Notes (X/Twitter)", lecture: "Lecture 8", answer: "Content moderation requiring cross-partisan consensus. Effective in principle but notes take 6+ hours to become visible, only 48.2% come from the US despite global reach, and the system can be gamed." },
+  { term: "DSA — Digital Services Act", lecture: "Lecture 12", answer: "EU regulation requiring platforms to explain content moderation decisions, give users appeal mechanisms, and be transparent about recommender systems." },
+  { term: "GDPR", lecture: "Lecture 12", answer: "EU regulation giving citizens rights over their personal data — right to access, correct, delete, and know how it is used." },
+  { term: "AI Act (EU)", lecture: "Lecture 12", answer: "Requires disclosure when high-risk AI systems make decisions about citizens — part of the EU regulatory framework alongside GDPR and DSA." },
+  { term: "Cambridge Analytica", lecture: "Lecture 11", answer: "Firm that harvested 87 million Facebook profiles via a personality quiz app, built OCEAN psychological profiles, and micro-targeted voters with tailored political advertising." },
+  { term: "Palantir", lecture: "Lecture 11", answer: "Defense tech company selling AI-driven surveillance to US military, Pentagon, NHS, Israeli government, and European asset managers. Founders frame regulators as enemies of innovation." },
+];
+
+// ============================================================
+// DATA — MCQ
+// ============================================================
+const mcqData = [
+  // — Authors & studies —
+  {
+    lecture: "Lecture 1",
+    question: "ARPANET, the precursor to the internet, was primarily funded by:",
+    options: ["Silicon Valley tech companies", "The US military during the Cold War", "European academic institutions", "The United Nations"],
+    correct: 1,
+    explanation: "ARPANET was a US military project (DARPA) designed for a communication system that could survive a nuclear attack — Cold War geopolitics directly shaped the internet's architecture."
+  },
+  {
+    lecture: "Lecture 1",
+    question: "Who developed the TCP/IP protocol in 1974?",
+    options: ["Tim Berners-Lee and Robert Cailliau", "Stewart Brand and John McCarthy", "Vint Cerf and Bob Kahn", "Bill Gates and Steve Jobs"],
+    correct: 2,
+    explanation: "TCP/IP was designed by Cerf and Kahn for resilience and openness — making it hard for authoritarian governments to control without building separate filtering infrastructure on top."
+  },
+  {
+    lecture: "Lecture 1",
+    question: "Stewart Brand's 'hippie paradox' describes a tension between:",
+    options: ["Military vs civilian internet use", "'Information wants to be free' vs 'information wants to be expensive'", "Open source vs proprietary software", "Academic vs commercial AI development"],
+    correct: 1,
+    explanation: "Brand articulated both impulses in 1984. This tension is still at war today: Wikipedia vs journal paywalls, free streaming vs subscriptions, open source vs proprietary."
+  },
+  {
+    lecture: "Lecture 2",
+    question: "Van der Does et al. (2022) studied:",
+    options: ["How platforms amplify disinformation", "The economics of the attention market", "Strategic identity signalling during the 2020 US election", "Echo chambers across social media platforms"],
+    correct: 2,
+    explanation: "Van der Does et al. mathematically measured how people adapt identity signalling based on perceived audience — using coded language their in-group recognises but outsiders won't flag."
+  },
+  {
+    lecture: "Lecture 3",
+    question: "After Trump tweeted against Macy's in 2015, researchers found that:",
+    options: ["Both Republicans and Democrats reduced purchase intentions", "Republicans significantly reduced purchase intentions, Democrats increased them", "Macy's stock fell immediately but recovered within a week", "The boycott had no measurable effect on purchasing behaviour"],
+    correct: 1,
+    explanation: "Elite messaging caused rapid partisan divergence: the brand became an identity battleground. The effect decays over time without reinforcement — making digital boycotts often episodic and symbolic."
+  },
+  {
+    lecture: "Lecture 4",
+    question: "Meier (2024) warned about which emerging threat to democratic information?",
+    options: ["Deepfake video manipulation of election results", "LLM chatbots deployed as political actors generating content and delegitimising opponents at scale", "Foreign governments buying social media advertising", "Algorithmic amplification of fringe political parties"],
+    correct: 1,
+    explanation: "Unlike obvious 2016-era bots, LLM-generated content is fluent, human-like, and hard to detect. It doesn't just amplify — it generates new content and reframes events."
+  },
+  {
+    lecture: "Lecture 5",
+    question: "Loewenstein & Wojtowicz (2025) argued that attention should be recognised as:",
+    options: ["A public good governments must protect", "A productive factor like land, labor, or capital", "A form of currency tradable on financial markets", "An externality of the advertising industry"],
+    correct: 1,
+    explanation: "Attention affects economic productivity and political competence — when you can't pay attention, you can't learn, create, or make good decisions. The attention economy damages democratic and economic capacity."
+  },
+  {
+    lecture: "Lecture 6",
+    question: "'Twisted accountability' (Stark & Vanden Broeck 2024) refers to:",
+    options: ["Platforms avoiding taxes through legal structures", "When an algorithm makes a wrong decision and no human is held responsible", "Journalists blamed for algorithmic recommendation failures", "Users held responsible for content the platform surfaced to them"],
+    correct: 1,
+    explanation: "If a driver is unfairly banned or a worker penalised for something beyond their control, the accountability chain is broken by design — just an algorithm that 'made the decision.'"
+  },
+  {
+    lecture: "Lecture 6",
+    question: "Meyn et al. (2023) found that switching Spotify from pro-rata to user-centric royalties would:",
+    options: ["Reduce total royalty payouts by 50%", "Have no measurable effect on distribution", "Reallocate approximately €170M/year from mainstream to niche genres", "Benefit major labels at the expense of independent artists"],
+    correct: 2,
+    explanation: "Under pro-rata, a jazz listener's fees fund the most-streamed pop artists globally. User-centric redirects that €10/month to the artists they actually listen to — a political choice dressed as a technical design decision."
+  },
+  {
+    lecture: "Lecture 7",
+    question: "Watts et al. (2021) found that 'fake news' constitutes approximately what share of the average person's information diet?",
+    options: ["Less than 1%", "Around 5%", "Around 15%", "More than 25%"],
+    correct: 0,
+    explanation: "Fake news is rare in individual diets but can still tilt elections. More dangerous are subtle forms — selection bias and slant — which operate below conscious detection."
+  },
+  {
+    lecture: "Lecture 7",
+    question: "The 'illusory truth effect' (Ecker et al. 2022) means that:",
+    options: ["People only believe claims that confirm their worldview", "Repeated exposure to a claim makes it feel familiar, and familiarity is mistaken for truth", "Political figures are trusted more than scientists", "Visual content is believed more readily than text"],
+    correct: 1,
+    explanation: "This is a cognitive driver of false belief — distinct from socio-affective drivers like source cues and worldview alignment. Repetition creates familiarity; familiarity feels like truth."
+  },
+  {
+    lecture: "Lecture 8",
+    question: "Cinelli et al. (2021) found that on Reddit and Gab, content is:",
+    options: ["More diverse due to community moderation", "Systematically skewed toward the platform's dominant ideological lean regardless of where users start", "Effectively balanced by fact-checking integrations", "Mainly influenced by the user's own prior sharing history"],
+    correct: 1,
+    explanation: "Reddit is systematically left-leaning, Gab systematically right-leaning — no matter where you begin ideologically. The platform's structure, not just your choices, determines your information environment."
+  },
+  {
+    lecture: "Lecture 8",
+    question: "Diaz Ruiz & Nilsson (2023) argue that disinformation spreads:",
+    options: ["Despite controversy, because users dismiss it as noise", "Because of controversy — bad actors seed it, then the platform's engagement engine amplifies it", "Primarily through automated bots rather than real users", "Only when traditional media fails to provide a counter-narrative"],
+    correct: 1,
+    explanation: "Disinformation uses controversy as fuel. Correcting with facts fails because it uses an epistemology the audience doesn't trust — you can't fight flat-earth beliefs by citing NASA if NASA is the institution they've decided is lying."
+  },
+  {
+    lecture: "Lecture 9",
+    question: "Nadeem et al. (2021) found that user co-creation on platforms depends most heavily on:",
+    options: ["Number of features the platform offers", "Whether users trust the platform to be ethical (privacy, security, shared values)", "The size of the platform's user base", "Whether the platform pays users for contributions"],
+    correct: 1,
+    explanation: "Platforms depend on user trust to generate the content and data that make them valuable — yet their business models often systematically undermine that trust."
+  },
+  {
+    lecture: "Lecture 11",
+    question: "Corey Robin argues that surveillance:",
+    options: ["Is inevitable once the technology exists", "Begins with manufactured fear, mobilised by states and corporations to justify expanding monitoring", "Is primarily a private sector problem", "Has been made controllable through GDPR-style regulation"],
+    correct: 1,
+    explanation: "The key question is not whether surveillance is technically effective — it is who defines the threat, who is surveilled, and who profits from building the infrastructure. Fear manufacture precedes and justifies surveillance expansion."
+  },
+  {
+    lecture: "Lecture 11",
+    question: "Cambridge Analytica harvested data on how many Facebook profiles?",
+    options: ["1 million", "14 million", "87 million", "200 million"],
+    correct: 2,
+    explanation: "The data was collected via a personality quiz app. Behavioral data collection at scale is inherently a political infrastructure — whoever controls it can shape electoral outcomes."
+  },
+  {
+    lecture: "Lecture 11",
+    question: "COMPAS demonstrated algorithmic bias by:",
+    options: ["Denying parole to Black defendants at twice the rate of white defendants", "Flagging Black defendants as future criminals at nearly twice the rate of white defendants", "Excluding non-white defendants from risk calculations", "Using race as an explicit numerical variable in its formula"],
+    correct: 1,
+    explanation: "COMPAS was trained on historical policing data reflecting decades of racial bias — that bias became crystallised in code, automated, and given the veneer of objectivity."
+  },
+  {
+    lecture: "Lecture 12",
+    question: "According to Gorwa et al. (2024), Meta spent approximately how much on EU lobbying in 2022?",
+    options: ["€2 million", "€5 million", "€8 million", "€15 million"],
+    correct: 2,
+    explanation: "Meta employed 17 full-time lobbyists and spent €8M. Google's strategy included dividing the European Commission internally and mobilising US government pressure against Commissioner Thierry Breton."
+  },
+  {
+    lecture: "Lecture 12",
+    question: "The EU's Digital Services Act (DSA) primarily requires platforms to:",
+    options: ["Pay taxes proportional to data collected from EU citizens", "Share advertising revenue with content creators", "Explain content moderation decisions and provide users with appeal mechanisms", "Limit recommendation algorithms to verified content only"],
+    correct: 2,
+    explanation: "The DSA is ambitious — but enforcement is fragmented across national authorities, underfunded, and unevenly applied. High standards only work if enforcement follows."
+  },
+  // — Keywords & definitions —
+  {
+    lecture: "Lecture 2",
+    question: "What does 'inscription' mean in technology studies?",
+    options: ["The process of users signing up and registering for a platform", "Values, politics, and assumptions embedded in technological design itself", "Legal terms written into a platform's terms of service", "The metadata attached to a digital file"],
+    correct: 1,
+    explanation: "Inscription means politics are built into the artefact — TCP/IP's openness, AirBnb's 'sharing' framing, the blue checkmark as credibility signal. The design encodes a worldview."
+  },
+  {
+    lecture: "Lecture 2",
+    question: "A 'prosumer' in platform economics is:",
+    options: ["A professional consumer who pays a premium subscription", "Someone who both produces and consumes content, generating value the platform captures for free", "A programmer who builds applications using platform APIs", "A content moderator who reviews user uploads"],
+    correct: 1,
+    explanation: "Prosumers work for free or near-free while the platform captures economic value by selling their attention to advertisers and owning the distribution infrastructure. Power asymmetry disguised as participation."
+  },
+  {
+    lecture: "Lecture 2",
+    question: "In the PIAI framework, 'affordances' are best described as:",
+    options: ["Rules platforms set for what users can and cannot do", "Possibilities a technology offers — not commands, but what it makes easy, visible, or natural to do", "The financial value a platform can extract from user data", "Regulatory requirements platforms must meet"],
+    correct: 1,
+    explanation: "Affordances are about possibility, not determination. Instagram affords photo-sharing, but also self-comparison and brand advertising — which ones dominate depends on design, business model, and user behaviour."
+  },
+  {
+    lecture: "Lecture 3",
+    question: "What are 'epistemic primers' in the context of online identity?",
+    options: ["Fact-checking tools that run before content is displayed", "Identity signals (bio, profile picture, hashtags) that shape perceived credibility before content is even read", "Introductory courses on digital literacy for citizens", "Platform labels identifying trusted news sources"],
+    correct: 1,
+    explanation: "A tweet from 'former diplomat, AI expert' is processed differently than the same tweet from an anonymous account — even if the information is identical. The label shapes reception before content is evaluated."
+  },
+  {
+    lecture: "Lecture 3",
+    question: "A 'buycott' differs from a boycott in that it involves:",
+    options: ["Boycotting a company by buying a competitor's products instead", "Deliberately buying from a brand as a positive political statement", "Crowdfunding campaigns to support ethical businesses", "Governments buying from domestic companies as a political signal"],
+    correct: 1,
+    explanation: "Buycotts are the inverse — consumption as affirmation rather than refusal. When Trump called for a Macy's boycott, Democrats increased purchase intentions as a counter-signal."
+  },
+  {
+    lecture: "Lecture 4",
+    question: "What does 'preferential attachment' explain about online influence?",
+    options: ["Why users prefer content from people they already follow", "Why accounts with more followers appear more often, gaining even more followers — a rich-get-richer dynamic", "Why platforms prefer advertising revenue over subscription models", "Why influencers prefer brand partnerships over political content"],
+    correct: 1,
+    explanation: "More followers → more visibility → more authority → more advertising deals and political reach. Influence becomes a market mediated by an algorithm designed to maximise engagement."
+  },
+  {
+    lecture: "Lecture 4",
+    question: "The 'Liar's Dividend' refers to:",
+    options: ["Profits platforms earn from advertising placed around viral false content", "The way synthetic content makes real evidence easy to dismiss as potentially fake", "The financial gain disinformation actors receive from spreading false stories", "Tax benefits platforms claim for content moderation spending"],
+    correct: 1,
+    explanation: "This is worse than more misinformation — it erodes the shared epistemic ground that democratic argument depends on. If you can't agree on what counts as real, political debate becomes impossible."
+  },
+  {
+    lecture: "Lecture 5",
+    question: "What is the core logic of the 'attention economy'?",
+    options: ["Information is scarce, so platforms charge users for access", "Attention is the scarce commodity — platforms sell your attention to advertisers, making you the product", "The more content a platform has, the more attention it commands from regulators", "Cognitive bandwidth determines how much advertising a user can absorb"],
+    correct: 1,
+    explanation: "Herbert Simon: information abundance creates attention scarcity. Whoever controls attention controls what people think, feel, and do. The platform's financial interest is structurally misaligned with users' psychological wellbeing."
+  },
+  {
+    lecture: "Lecture 5",
+    question: "The GameStop/meme stock case demonstrated that:",
+    options: ["Retail investors can consistently beat professional traders using social media", "Social media attention can synchronise with trading volume and prices, creating reality rather than just tracking fundamentals", "Financial regulation is sufficient to prevent market manipulation", "Algorithmic trading amplifies human irrationality"],
+    correct: 1,
+    explanation: "Markets reacted to a self-amplifying wave of collective attention, not new fundamentals. This undermines classical economic assumptions and reveals new vulnerabilities to coordinated manipulation."
+  },
+  {
+    lecture: "Lecture 6",
+    question: "What is 'algorithmic management' in the context of gig work?",
+    options: ["Using AI to hire and fire employees based on CV screening", "Algorithms performing management functions — assigning tasks, tracking performance, rewarding and sanctioning — without human accountability", "Software tools that help workers manage their own schedules", "Automated invoicing systems for freelance contractors"],
+    correct: 1,
+    explanation: "Algorithmic management does what human managers used to do — but when it makes a wrong decision, no human is responsible. Stark &amp; Vanden Broeck (2024) call this 'twisted accountability.'"
+  },
+  {
+    lecture: "Lecture 6",
+    question: "What is the key difference between pro-rata and user-centric royalty models in music streaming?",
+    options: ["Pro-rata pays artists per stream; user-centric pays per song completion", "Pro-rata pools all subscriptions and divides by total streams; user-centric routes each subscriber's fee to the artists they personally listen to", "Pro-rata favours major labels; user-centric favours independent artists filing direct deals", "Pro-rata is used by Spotify; user-centric is used by Apple Music"],
+    correct: 1,
+    explanation: "Under pro-rata, a jazz listener's €10/month funds the most-streamed pop artists globally. User-centric would redirect it to the jazz artists they actually listen to — shifting ~€170M/year to niche genres."
+  },
+  {
+    lecture: "Lecture 7",
+    question: "What distinguishes affective polarization from ideological polarization?",
+    options: ["Affective polarization is about policy positions; ideological is about emotional reactions", "Affective polarization is hatred and distrust of the other side regardless of policy; ideological is about actual differences in policy positions", "Affective polarization affects voters; ideological polarization affects politicians", "Affective polarization is amplified by social media; ideological polarization predates digital technology"],
+    correct: 1,
+    explanation: "People aren't necessarily further apart on issues — they just despise each other more. Platforms amplify affective polarization because outrage and disgust generate more engagement than nuanced agreement."
+  },
+  {
+    lecture: "Lecture 7",
+    question: "Elon Musk's change to the Twitter blue checkmark is significant because:",
+    options: ["It reduced the platform's advertising revenue significantly", "It changed the epistemic infrastructure of the platform — anyone who pays now has the same visual trust signal as verified journalists or public health experts", "It violated EU data protection regulation", "It caused a mass exodus of verified users to competing platforms"],
+    correct: 1,
+    explanation: "This is not a minor product decision — it is a change to how credibility is allocated across a platform used by hundreds of millions for political information. Verification became a market rather than an epistemic signal."
+  },
+  {
+    lecture: "Lecture 8",
+    question: "What is 'group polarization' in the context of echo chambers?",
+    options: ["A phenomenon where groups split into two opposing factions over time", "A process where views within an echo chamber don't just stay constant but become more extreme, moving toward the group's existing pole", "The formation of online groups around a single polarising issue", "The way algorithms target users in opposing political groups with different content"],
+    correct: 1,
+    explanation: "Cinelli et al. (2021) demonstrated this empirically. On Reddit and Gab, the content you receive is systematically skewed toward the platform's dominant lean — no matter where you start ideologically."
+  },
+  {
+    lecture: "Lecture 8",
+    question: "Community Notes on X has which of the following limitations?",
+    options: ["Notes are only shown to users who follow verified accounts", "Notes often take over 6 hours to reach 'Helpful' status — after viral disinformation has already spread", "Notes require government approval in each country", "Notes only cover political content and not health misinformation"],
+    correct: 1,
+    explanation: "Additionally, only 48.2% of notes come from the US despite the platform being global, and coordinated groups can game the system. Real-time disinformation spreads faster than consensus-based correction can catch it."
+  },
+  {
+    lecture: "Lecture 9",
+    question: "The 'sharing economy contradiction' (AirBnb, Uber) refers to:",
+    options: ["Users sharing personal data without compensation", "Platforms using community and sharing language while operating as profit-extracting intermediaries that avoid regulation and shift risk onto workers", "Open source projects being captured by large corporations", "Workers in the gig economy sharing jobs informally"],
+    correct: 1,
+    explanation: "'Sharing' is an inscription — it hides a conventional profit-extraction model behind a warm social narrative. AirBnb has driven up rents and displaced long-term residents in cities across the world."
+  },
+  {
+    lecture: "Lecture 10",
+    question: "What is 'slacktivism'?",
+    options: ["Paid political campaign work disguised as organic activism", "Low-barrier digital participation — liking, sharing, signing petitions — that is often symbolic and episodic rather than producing real change", "Anonymous online activism designed to protect the identity of protestors", "The use of AI tools to automate political messaging"],
+    correct: 1,
+    explanation: "Over 30% of social media users report supporting causes online — but the barrier to entry is so low that participation is cheap. The question of whether digital activism creates real pressure or generates social media noise is genuinely contested."
+  },
+  {
+    lecture: "Lecture 10",
+    question: "What is 'artivism' and who is a key example from the lectures?",
+    options: ["Art created by AI systems, exemplified by DALL-E political imagery", "The combination of art and activism that exposes hidden mechanisms of power — Paolo Cirio cataloguing manipulative technology patents is a key example", "Online fundraising for artists displaced by digital platforms", "The use of viral aesthetics in political advertising campaigns"],
+    correct: 1,
+    explanation: "Cirio hacked the Google Patents search engine to show that manipulation is patented — legally documented, intentional, profitable. Companies hold IP rights over techniques designed to alter your behaviour without your awareness."
+  },
+  {
+    lecture: "Lecture 11",
+    question: "What does the OCEAN model stand for?",
+    options: ["Online, Calculated, Engagement, Aggregated, Networked", "Openness, Conscientiousness, Extraversion, Agreeableness, Neuroticism", "Output, Classification, Evaluation, Analysis, Normalisation", "Observed, Coded, Estimated, Automated, Networked"],
+    correct: 1,
+    explanation: "Cambridge Analytica used OCEAN psychological profiling to micro-target voters — building profiles from 87 million harvested Facebook profiles and tailoring political advertising to each psychological type."
+  },
+  {
+    lecture: "Lecture 11",
+    question: "The algorithmic auditing cycle (Koshiyama et al. 2024) must be continuous rather than a one-time process because:",
+    options: ["Regulation requires annual recertification by law", "Bias evolves with data and context over time — new forms emerge that weren't present at initial deployment", "Algorithms become more accurate the longer they run", "Public trust requires regular visible audits for reputational reasons"],
+    correct: 1,
+    explanation: "The four stages (Development → Assessment → Mitigation → Assurance) loop continuously — the social context changes, training data changes, and new biases emerge that weren't detectable at launch."
+  },
+  {
+    lecture: "Lecture 12",
+    question: "Why is consent to Terms & Conditions described as structurally imbalanced?",
+    options: ["Because T&Cs are written in deliberately confusing legal language by design", "Because users believe it takes too long, nobody else reads them, and they have no real choice — all three beliefs are accurate, producing consent that is neither informed nor voluntary", "Because companies change T&Cs without notifying users", "Because only large corporations have legal teams that can interpret T&Cs"],
+    correct: 1,
+    explanation: "The three cost/benefit, normative, and control beliefs are all accurate — and together they produce a structural outcome: nominal consent that converts into unlimited platform rights over your data and behaviour."
+  },
+  {
+    lecture: "Lectures 11–12",
+    question: "Which best captures the meta-argument connecting lectures on surveillance and T&Cs?",
+    options: ["Both show technology is neutral — human actors create the problems", "Both show platforms mobilise fear or obscure power to expand control, then reshape the regulatory environment meant to govern them", "Both show EU regulation is the most effective response to platform power", "Both suggest individual users bear the primary responsibility for platform harms"],
+    correct: 1,
+    explanation: "The pattern: platforms manufacture fear to justify surveillance, exploit data for political manipulation, encode power asymmetries in legal contracts, and then lobby to shape the regulation that is supposed to limit them."
+  },
+];
+
+// ============================================================
+// FLASHCARD STATE
+// ============================================================
+let authorIndex = 0;
+let authorOrder = [...Array(authorCards.length).keys()];
+let authorFlipped = false;
+
+let defIndex = 0;
+let defOrder = [...Array(defCards.length).keys()];
+let defFlipped = false;
+
+let activeSection = 'author-cards';
+
+function renderCard(type) {
+  const isAuthor = type === 'author';
+  const cards = isAuthor ? authorCards : defCards;
+  const order = isAuthor ? authorOrder : defOrder;
+  const idx = isAuthor ? authorIndex : defIndex;
+  const card = cards[order[idx]];
+
+  document.getElementById(isAuthor ? 'author-counter' : 'def-counter').textContent =
+    `Card ${idx + 1} of ${cards.length}`;
+  document.getElementById(isAuthor ? 'author-term' : 'def-term').innerHTML = card.term;
+  document.getElementById(isAuthor ? 'author-answer' : 'def-answer').innerHTML = card.answer;
+  document.getElementById(isAuthor ? 'author-year' : 'def-year').textContent = card.year || '';
+  document.getElementById(isAuthor ? 'author-lecture-tag' : 'def-lecture-tag').textContent = card.lecture;
+  document.getElementById(isAuthor ? 'author-lecture-tag-back' : 'def-lecture-tag-back').textContent = card.lecture;
+
+  const cardEl = document.getElementById(isAuthor ? 'author-card' : 'def-card');
+  cardEl.classList.remove('flipped');
+  if (isAuthor) authorFlipped = false; else defFlipped = false;
+}
+
+function flipCard(type) {
+  const isAuthor = type === 'author';
+  const cardEl = document.getElementById(isAuthor ? 'author-card' : 'def-card');
+  if (isAuthor) { authorFlipped = !authorFlipped; cardEl.classList.toggle('flipped', authorFlipped); }
+  else { defFlipped = !defFlipped; cardEl.classList.toggle('flipped', defFlipped); }
+}
+
+function nextCard(type) {
+  const isAuthor = type === 'author';
+  const len = isAuthor ? authorCards.length : defCards.length;
+  if (isAuthor) authorIndex = (authorIndex + 1) % len;
+  else defIndex = (defIndex + 1) % len;
+  renderCard(type);
+}
+
+function prevCard(type) {
+  const isAuthor = type === 'author';
+  const len = isAuthor ? authorCards.length : defCards.length;
+  if (isAuthor) authorIndex = (authorIndex - 1 + len) % len;
+  else defIndex = (defIndex - 1 + len) % len;
+  renderCard(type);
+}
+
+function shuffleDeck(type) {
+  const isAuthor = type === 'author';
+  const order = isAuthor ? authorOrder : defOrder;
+  for (let i = order.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [order[i], order[j]] = [order[j], order[i]];
+  }
+  if (isAuthor) authorIndex = 0; else defIndex = 0;
+  renderCard(type);
+}
+
+// ============================================================
+// KEYBOARD SHORTCUTS
+// ============================================================
+document.addEventListener('keydown', function(e) {
+  if (activeSection === 'mcq') return;
+
+  // Don't fire if user is typing in an input
+  if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+
+  const type = activeSection === 'author-cards' ? 'author' : 'def';
+
+  if (e.code === 'Space') {
+    e.preventDefault();
+    flipCard(type);
+  } else if (e.code === 'ArrowRight') {
+    e.preventDefault();
+    nextCard(type);
+  } else if (e.code === 'ArrowLeft') {
+    e.preventDefault();
+    prevCard(type);
+  }
+});
+
+// ============================================================
+// MCQ STATE
+// ============================================================
+let mcqIndex = 0;
+let mcqScore = 0;
+let mcqAnswered = 0;
+const mcqState = new Array(mcqData.length).fill(null); // null | 'correct' | 'incorrect'
+
+function renderMCQ() {
+  const q = mcqData[mcqIndex];
+  const container = document.getElementById('mcq-card-container');
+  const state = mcqState[mcqIndex];
+
+  document.getElementById('mcq-counter').textContent =
+    `Question ${mcqIndex + 1} of ${mcqData.length}`;
+
+  const optionsHTML = q.options.map((opt, oi) => {
+    let cls = 'option';
+    if (state !== null) {
+      cls += ' disabled';
+      if (oi === q.correct) cls += ' reveal-correct';
+      if (oi === state && state !== q.correct) cls += ' incorrect';
+      if (oi === state && state === q.correct) cls = 'option disabled correct';
+    }
+    return `<button class="${cls}" onclick="answerMCQ(${oi})">${String.fromCharCode(65 + oi)}. ${opt}</button>`;
+  }).join('');
+
+  const expVisible = state !== null ? ' visible' : '';
+
+  container.innerHTML = `
+    <div class="mcq-card">
+      <div class="q-lecture-tag">${q.lecture}</div>
+      <div class="question">${q.question}</div>
+      <div class="options">${optionsHTML}</div>
+      <div class="explanation${expVisible}">${q.explanation}</div>
+    </div>
+  `;
+
+  updateScore();
+}
+
+function answerMCQ(selected) {
+  if (mcqState[mcqIndex] !== null) return; // already answered
+  const q = mcqData[mcqIndex];
+  mcqState[mcqIndex] = selected;
+  mcqAnswered++;
+  if (selected === q.correct) mcqScore++;
+  renderMCQ();
+}
+
+function nextMCQ() {
+  mcqIndex = (mcqIndex + 1) % mcqData.length;
+  renderMCQ();
+}
+
+function prevMCQ() {
+  mcqIndex = (mcqIndex - 1 + mcqData.length) % mcqData.length;
+  renderMCQ();
+}
+
+function resetMCQ() {
+  mcqIndex = 0;
+  mcqScore = 0;
+  mcqAnswered = 0;
+  mcqState.fill(null);
+  renderMCQ();
+}
+
+function updateScore() {
+  const el = document.getElementById('score-display');
+  if (mcqAnswered === 0) {
+    el.textContent = 'Score: 0 / 0';
+    el.style.color = 'var(--accent)';
+  } else {
+    const pct = Math.round((mcqScore / mcqAnswered) * 100);
+    el.textContent = `Score: ${mcqScore} / ${mcqAnswered} (${pct}%)`;
+    el.style.color = pct >= 70 ? 'var(--correct)' : pct >= 50 ? '#b07d00' : 'var(--incorrect)';
+  }
+}
+
+// ============================================================
+// NAVIGATION
+// ============================================================
+function showSection(id, btn) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.querySelectorAll('nav button').forEach(b => b.classList.remove('active'));
+  document.getElementById(id).classList.add('active');
+  btn.classList.add('active');
+  activeSection = id;
+}
+
+// ============================================================
+// INIT
+// ============================================================
+renderCard('author');
+renderCard('def');
+renderMCQ();
+</script>
+</body>
+</html>
